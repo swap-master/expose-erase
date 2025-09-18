@@ -1,0 +1,104 @@
+Experiment_name: Skeleton_anonymization_trans_stack_gan
+
+# feeder
+feeder: feeders.feeder_anonymization.Feeder
+train_feeder_args:
+  data_path: ./data/ntu/xrep_v2/train_data_joint.npy
+  privacy_label_path: ./data/ntu/xrep_v2/train_label_privacy.pkl
+  action_label_path: ./data/ntu/xrep_v2/train_label.pkl
+  debug: False
+  random_choose: False
+  random_shift: False
+  random_move: False
+  window_size: -1
+  normalization: False
+
+test_feeder_args:
+  data_path: ./data/ntu/xrep_v2/val_data_joint.npy
+  privacy_label_path: ./data/ntu/xrep_v2/val_label_privacy.pkl
+  action_label_path: ./data/ntu/xrep_v2/val_label.pkl
+
+# model
+anonymizer_model: model.anonymization_trans_stack.Anonymizer
+model_args:
+  num_point: 25
+  num_person: 2
+  graph: graph.ntu_rgb_d.Graph
+  graph_args:
+    labeling_mode: 'spatial'
+
+action_model: model.shift_gcn.Model
+action_model_args:
+  num_class: 60
+  num_point: 25
+  num_person: 2
+  graph: graph.ntu_rgb_d.Graph
+  graph_args:
+    labeling_mode: 'spatial'
+
+privacy_model: model.shift_gcn.Model
+privacy_model_args:
+  num_class: 40
+  num_point: 25
+  num_person: 2
+  graph: graph.ntu_rgb_d.Graph
+  graph_args:
+    labeling_mode: 'spatial'
+
+mamp_model: model_mamp.transformer.Transformer
+mamp_model_args:
+  dim_in: 3
+  dim_feat: 256
+  decoder_dim_feat: 256
+  depth: 8
+  decoder_depth: 3
+  num_heads: 8
+  mlp_ratio: 4
+  num_frames: 120
+  num_joints: 25
+  patch_size: 1
+  t_patch_size: 4
+  qkv_bias: True
+  qk_scale: None
+  drop_rate: 0.
+  attn_drop_rate: 0.
+  drop_path_rate: 0.
+  norm_skes_loss: True
+
+#optim
+weight_decay: 0.0001
+base_lr: 0.002
+
+step: [30, 40, 50, 60]
+
+# training
+device: [0]
+only_train_epoch: 1
+batch_size: 16
+test_batch_size: 16
+num_epoch: 100
+nesterov: True
+
+
+minimization_steps: 1
+
+test_action:
+  batch_size: 16
+
+test_privacy:
+  batch_size: 16
+
+pretrained_action: pretrained/ntu_ShiftGCN_joint_xrep_v2.pt
+pretrained_privacy: pretrained/ntu_ShiftGCN_id_xrep_v2.pt
+pretrained_mamp: pretrained/checkpoint-mamp-xrep_v3.pth
+pretrained_privacy_test: pretrained/ntu_ShiftGCN_id_xrep_v2.pt
+
+delta: 2 # action loss
+alpha: 1 # privacy loss
+beta: 1 # recon loss
+gamma: 1 # gan loss
+
+wandb: "project_name"
+entity: "user"
+
+dataset: "ntu60"
